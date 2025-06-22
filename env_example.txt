@@ -1,2 +1,2 @@
-# OpenAI API Key - Get yours at https://platform.openai.com/api-keys
-OPENAI_API_KEY=your_openai_api_key_here 
+# OpenRouter API Key - Get yours at https://openrouter.ai/ (Free tokens available!)
+OPENROUTER_API_KEY=your_openrouter_api_key_here 

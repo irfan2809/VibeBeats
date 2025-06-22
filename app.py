@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-from openai import OpenAI
+import requests
 import os
 from dotenv import load_dotenv
 import json
@@ -11,12 +11,9 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# Configure OpenAI - handle missing API key gracefully
-api_key = os.getenv('OPENAI_API_KEY')
-if api_key:
-    client = OpenAI(api_key=api_key)
-else:
-    client = None
+# Configure OpenRouter API
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 @app.route('/')
 def index():
@@ -31,11 +28,11 @@ def analyze_mood():
         if not user_input:
             return jsonify({'error': 'No mood text provided'}), 400
         
-        # Check if OpenAI API key is available
-        if not client:
-            return jsonify({'error': 'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.'}), 500
+        # Check if OpenRouter API key is available
+        if not OPENROUTER_API_KEY:
+            return jsonify({'error': 'OpenRouter API key not configured. Please set OPENROUTER_API_KEY environment variable.'}), 500
         
-        # Analyze mood using OpenAI
+        # Analyze mood using OpenRouter
         mood_analysis = analyze_mood_with_llm(user_input)
         
         # Generate playlist recommendations
@@ -50,7 +47,7 @@ def analyze_mood():
         return jsonify({'error': str(e)}), 500
 
 def analyze_mood_with_llm(user_input):
-    """Use OpenAI to analyze the user's mood and generate recommendations"""
+    """Use OpenRouter to analyze the user's mood and generate recommendations"""
     
     prompt = f"""
     Analyze the following user input and provide mood classification and description:
@@ -72,55 +69,71 @@ def analyze_mood_with_llm(user_input):
     """
     
     try:
-        if not client:
-            raise Exception("OpenAI client not initialized")
-            
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "http://localhost:5000",
+            "X-Title": "Mood-to-Music Recommender"
+        }
+        
+        payload = {
+            "model": "openai/gpt-3.5-turbo",  # You can also use "anthropic/claude-3-haiku" or other models
+            "messages": [
                 {"role": "system", "content": "You are a music mood analyzer. Provide accurate, search-friendly mood classifications."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=300,
-            temperature=0.7
+            "max_tokens": 300,
+            "temperature": 0.7
+        }
+        
+        response = requests.post(
+            f"{OPENROUTER_BASE_URL}/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30
         )
         
-        # Parse the JSON response
-        analysis_text = response.choices[0].message.content
-        if analysis_text:
-            analysis_text = analysis_text.strip()
+        if response.status_code == 200:
+            data = response.json()
+            analysis_text = data['choices'][0]['message']['content']
+            
+            if analysis_text:
+                analysis_text = analysis_text.strip()
+            else:
+                analysis_text = ""
+            
+            # Try to extract JSON from the response
+            try:
+                # Remove any markdown formatting if present
+                if analysis_text.startswith('```json'):
+                    analysis_text = analysis_text[7:-3]
+                elif analysis_text.startswith('```'):
+                    analysis_text = analysis_text[3:-3]
+                
+                mood_data = json.loads(analysis_text)
+                return mood_data
+                
+            except json.JSONDecodeError:
+                # Fallback: create a basic structure
+                return {
+                    "primary_mood": "neutral",
+                    "secondary_mood": "calm",
+                    "mood_description": "Feeling balanced and content",
+                    "energy_level": "medium",
+                    "tempo_preference": "medium",
+                    "genre_suggestions": ["pop", "indie", "ambient"],
+                    "mood_keywords": ["balanced", "content", "peaceful"]
+                }
         else:
-            analysis_text = ""
-        
-        # Try to extract JSON from the response
-        try:
-            # Remove any markdown formatting if present
-            if analysis_text.startswith('```json'):
-                analysis_text = analysis_text[7:-3]
-            elif analysis_text.startswith('```'):
-                analysis_text = analysis_text[3:-3]
-            
-            mood_data = json.loads(analysis_text)
-            return mood_data
-            
-        except json.JSONDecodeError:
-            # Fallback: create a basic structure
-            return {
-                "primary_mood": "neutral",
-                "secondary_mood": "calm",
-                "mood_description": "Feeling balanced and content",
-                "energy_level": "medium",
-                "tempo_preference": "medium",
-                "genre_suggestions": ["pop", "indie", "ambient"],
-                "mood_keywords": ["balanced", "content", "peaceful"]
-            }
+            print(f"OpenRouter API error: {response.status_code} - {response.text}")
+            raise Exception(f"API request failed with status {response.status_code}")
             
     except Exception as e:
-        print(f"OpenAI API error: {e}")
+        print(f"OpenRouter API error: {e}")
         return {
             "primary_mood": "neutral",
             "secondary_mood": "calm",
-            "mood_description": "Feeling balanced and content",
+            "mood_description": "API error - using fallback mood analysis",
             "energy_level": "medium",
             "tempo_preference": "medium",
             "genre_suggestions": ["pop", "indie", "ambient"],
@@ -203,4 +216,4 @@ def create_search_queries(primary_mood, genre_suggestions, mood_keywords):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(debug=False, host='0.0.0.0', port=port) 
+    app.run(debug=False, host='127.0.0.1', port=port) 
