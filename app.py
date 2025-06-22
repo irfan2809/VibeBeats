@@ -11,8 +11,12 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# Configure OpenAI
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+# Configure OpenAI - handle missing API key gracefully
+api_key = os.getenv('OPENAI_API_KEY')
+if api_key:
+    client = OpenAI(api_key=api_key)
+else:
+    client = None
 
 @app.route('/')
 def index():
@@ -26,6 +30,10 @@ def analyze_mood():
         
         if not user_input:
             return jsonify({'error': 'No mood text provided'}), 400
+        
+        # Check if OpenAI API key is available
+        if not client:
+            return jsonify({'error': 'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.'}), 500
         
         # Analyze mood using OpenAI
         mood_analysis = analyze_mood_with_llm(user_input)
@@ -64,6 +72,9 @@ def analyze_mood_with_llm(user_input):
     """
     
     try:
+        if not client:
+            raise Exception("OpenAI client not initialized")
+            
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
