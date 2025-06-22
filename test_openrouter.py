@@ -19,6 +19,9 @@ def test_openrouter():
         "X-Title": "Mood-to-Music Recommender"
     }
     
+    if api_key:
+        print(f"🔧 Authorization header: Bearer {api_key[:20]}...")
+    
     payload = {
         "model": "openai/gpt-3.5-turbo",
         "messages": [
@@ -61,4 +64,6 @@ if __name__ == "__main__":
         print("3. Get your API key from the dashboard")
         print("4. Set it in your environment: $env:OPENROUTER_API_KEY='your_key_here'")
     else:
+        print(f"🔑 API Key loaded: {api_key[:20]}...")
+        print(f"📏 API Key length: {len(api_key)} characters")
         test_openrouter() 
