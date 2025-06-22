@@ -1,4 +1,4 @@
-# 🎵 Mood-to-Music Recommender
+# 🎵 VibeBeats, A Mood-to-Music Recommender
 
 A smart web application that analyzes your mood through text input and recommends personalized music playlists and search terms for various music platforms.
 
