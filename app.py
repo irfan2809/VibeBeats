@@ -2,21 +2,85 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import requests
 import os
-from dotenv import load_dotenv
-import json
-
-# Load environment variables
-load_dotenv()
+import random
 
 app = Flask(__name__)
 CORS(app)
 
-# Configure OpenRouter API
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+# Free music APIs and data
+MUSIC_DATA = {
+    'happy': {
+        'description': 'Upbeat and cheerful music',
+        'genres': ['Pop', 'Dance', 'Reggae', 'Disco'],
+        'artists': ['Pharrell Williams', 'Bruno Mars', 'Daft Punk', 'The Beatles'],
+        'songs': ['Happy', 'Uptown Funk', 'Get Lucky', 'Here Comes the Sun'],
+        'playlists': ['Happy Hits', 'Feel Good Vibes', 'Summer Party', 'Dance Pop']
+    },
+    'sad': {
+        'description': 'Melancholic and reflective music',
+        'genres': ['Blues', 'Jazz', 'Indie', 'Folk'],
+        'artists': ['Adele', 'Ed Sheeran', 'Lana Del Rey', 'Bon Iver'],
+        'songs': ['Someone Like You', 'Thinking Out Loud', 'Summertime Sadness', 'Skinny Love'],
+        'playlists': ['Sad Songs', 'Melancholy Vibes', 'Rainy Day', 'Heartbreak']
+    },
+    'excited': {
+        'description': 'High energy and powerful music',
+        'genres': ['Rock', 'Electronic', 'Hip-Hop', 'Metal'],
+        'artists': ['Imagine Dragons', 'The Weeknd', 'Eminem', 'Metallica'],
+        'songs': ['Radioactive', 'Blinding Lights', 'Lose Yourself', 'Nothing Else Matters'],
+        'playlists': ['Workout Mix', 'Party Anthems', 'Rock Classics', 'Energy Boost']
+    },
+    'calm': {
+        'description': 'Relaxing and peaceful music',
+        'genres': ['Ambient', 'Classical', 'Lo-Fi', 'Nature'],
+        'artists': ['Ludovico Einaudi', 'Max Richter', 'Chillhop Music', 'Nature Sounds'],
+        'songs': ['Experience', 'On the Nature of Daylight', 'Chill Beats', 'Ocean Waves'],
+        'playlists': ['Study Music', 'Sleep Sounds', 'Meditation', 'Peaceful Vibes']
+    },
+    'stressed': {
+        'description': 'Soothing and therapeutic music',
+        'genres': ['Chill', 'Ambient', 'Piano', 'Acoustic'],
+        'artists': ['Ólafur Arnalds', 'Nils Frahm', 'Sigur Rós', 'Explosions in the Sky'],
+        'songs': ['Near Light', 'Says', 'Hoppípolla', 'Your Hand in Mine'],
+        'playlists': ['Stress Relief', 'Calm Down', 'Therapeutic Sounds', 'Mindfulness']
+    }
+}
 
-def get_api_key():
-    """Get API key - simplified to avoid .env file issues"""
-    return "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"
+def get_music_recommendations(mood):
+    """Get music recommendations based on mood"""
+    if mood not in MUSIC_DATA:
+        mood = 'happy'  # Default fallback
+    
+    data = MUSIC_DATA[mood]
+    
+    # Generate search queries for different platforms
+    search_queries = []
+    
+    # Genre searches
+    for genre in data['genres'][:2]:
+        search_queries.append(f"{genre} {mood} playlist")
+        search_queries.append(f"{mood} {genre} music")
+    
+    # Artist searches
+    for artist in data['artists'][:2]:
+        search_queries.append(f"{artist} {mood} songs")
+    
+    # Song searches
+    for song in data['songs'][:2]:
+        search_queries.append(f"{song} {mood} mood")
+    
+    # Playlist searches
+    for playlist in data['playlists'][:2]:
+        search_queries.append(f"{playlist} {mood}")
+    
+    return {
+        'mood_description': data['description'],
+        'genres': data['genres'],
+        'artists': data['artists'],
+        'songs': data['songs'],
+        'playlists': data['playlists'],
+        'search_queries': search_queries[:6]
+    }
 
 @app.route('/')
 def index():
@@ -26,197 +90,38 @@ def index():
 def analyze_mood():
     try:
         data = request.get_json()
-        user_input = data.get('mood_text', '')
+        selected_mood = data.get('mood', '')
         
-        if not user_input:
-            return jsonify({'error': 'No mood text provided'}), 400
+        if not selected_mood:
+            return jsonify({'error': 'No mood selected'}), 400
         
-        # Get API key dynamically
-        api_key = get_api_key()
-        if not api_key:
-            return jsonify({'error': 'OpenRouter API key not configured. Please set OPENROUTER_API_KEY environment variable.'}), 500
+        # Get music recommendations
+        recommendations = get_music_recommendations(selected_mood)
         
-        # Analyze mood using OpenRouter
-        mood_analysis = analyze_mood_with_llm(user_input, api_key)
+        # Format response to match expected structure
+        mood_analysis = {
+            'primary_mood': selected_mood,
+            'secondary_mood': 'music-focused',
+            'mood_description': recommendations['mood_description'],
+            'energy_level': 'medium',
+            'tempo_preference': 'medium',
+            'genre_suggestions': recommendations['genres'],
+            'mood_keywords': [selected_mood, 'music', 'playlist']
+        }
         
-        # Generate playlist recommendations
-        playlist_data = generate_playlist_recommendations(mood_analysis)
+        playlist_recommendations = {
+            'playlist_titles': recommendations['playlists'],
+            'search_queries': recommendations['search_queries'],
+            'recommended_platforms': ['YouTube Music', 'Spotify', 'Apple Music']
+        }
         
         return jsonify({
             'mood_analysis': mood_analysis,
-            'playlist_recommendations': playlist_data
+            'playlist_recommendations': playlist_recommendations
         })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-def analyze_mood_with_llm(user_input, api_key):
-    """Use OpenRouter to analyze the user's mood and generate recommendations"""
-    
-    prompt = f"""
-    Analyze the following user input and provide mood classification and description:
-    
-    User Input: "{user_input}"
-    
-    Please respond in the following JSON format:
-    {{
-        "primary_mood": "main emotion (e.g., happy, sad, stressed, excited, calm, energetic, melancholic, hopeful)",
-        "secondary_mood": "secondary emotion or nuance",
-        "mood_description": "one-line description of the emotional state",
-        "energy_level": "low/medium/high",
-        "tempo_preference": "slow/medium/fast",
-        "genre_suggestions": ["genre1", "genre2", "genre3"],
-        "mood_keywords": ["keyword1", "keyword2", "keyword3", "keyword4"]
-    }}
-    
-    Focus on creating search-friendly terms that would work well for finding music playlists.
-    """
-    
-    try:
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "http://localhost:5000",
-            "X-Title": "Mood-to-Music Recommender"
-        }
-        
-        payload = {
-            "model": "openai/gpt-3.5-turbo",  # You can also use "anthropic/claude-3-haiku" or other models
-            "messages": [
-                {"role": "system", "content": "You are a music mood analyzer. Provide accurate, search-friendly mood classifications."},
-                {"role": "user", "content": prompt}
-            ],
-            "max_tokens": 300,
-            "temperature": 0.7
-        }
-        
-        response = requests.post(
-            f"{OPENROUTER_BASE_URL}/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            analysis_text = data['choices'][0]['message']['content']
-            
-            if analysis_text:
-                analysis_text = analysis_text.strip()
-            else:
-                analysis_text = ""
-            
-            # Try to extract JSON from the response
-            try:
-                # Remove any markdown formatting if present
-                if analysis_text.startswith('```json'):
-                    analysis_text = analysis_text[7:-3]
-                elif analysis_text.startswith('```'):
-                    analysis_text = analysis_text[3:-3]
-                
-                mood_data = json.loads(analysis_text)
-                return mood_data
-                
-            except json.JSONDecodeError:
-                # Fallback: create a basic structure
-                return {
-                    "primary_mood": "neutral",
-                    "secondary_mood": "calm",
-                    "mood_description": "Feeling balanced and content",
-                    "energy_level": "medium",
-                    "tempo_preference": "medium",
-                    "genre_suggestions": ["pop", "indie", "ambient"],
-                    "mood_keywords": ["balanced", "content", "peaceful"]
-                }
-        else:
-            print(f"OpenRouter API error: {response.status_code} - {response.text}")
-            raise Exception(f"API request failed with status {response.status_code}")
-            
-    except Exception as e:
-        print(f"OpenRouter API error: {e}")
-        return {
-            "primary_mood": "neutral",
-            "secondary_mood": "calm",
-            "mood_description": "API error - using fallback mood analysis",
-            "energy_level": "medium",
-            "tempo_preference": "medium",
-            "genre_suggestions": ["pop", "indie", "ambient"],
-            "mood_keywords": ["balanced", "content", "peaceful"]
-        }
-
-def generate_playlist_recommendations(mood_data):
-    """Generate playlist recommendations based on mood analysis"""
-    
-    primary_mood = mood_data.get('primary_mood', 'neutral')
-    energy_level = mood_data.get('energy_level', 'medium')
-    genre_suggestions = mood_data.get('genre_suggestions', [])
-    mood_keywords = mood_data.get('mood_keywords', [])
-    
-    # Generate search-friendly playlist titles
-    playlist_titles = generate_playlist_titles(primary_mood, energy_level, genre_suggestions, mood_keywords)
-    
-    # Create YouTube and Spotify search links
-    search_queries = create_search_queries(primary_mood, genre_suggestions, mood_keywords)
-    
-    return {
-        'playlist_titles': playlist_titles,
-        'search_queries': search_queries,
-        'recommended_platforms': ['YouTube Music', 'Spotify', 'Apple Music']
-    }
-
-def generate_playlist_titles(primary_mood, energy_level, genre_suggestions, mood_keywords):
-    """Generate creative playlist titles based on mood"""
-    
-    titles = []
-    
-    # Mood-based titles
-    mood_titles = [
-        f"{primary_mood.title()} Vibes",
-        f"Feeling {primary_mood.title()}",
-        f"{primary_mood.title()} Mood",
-        f"{primary_mood.title()} Energy"
-    ]
-    
-    # Energy-based titles
-    energy_titles = [
-        f"{energy_level.title()} Energy {primary_mood.title()}",
-        f"{primary_mood.title()} {energy_level.title()} Vibes"
-    ]
-    
-    # Genre-based titles
-    for genre in genre_suggestions[:2]:  # Limit to 2 genres
-        titles.append(f"{primary_mood.title()} {genre.title()}")
-        titles.append(f"{genre.title()} for {primary_mood.title()} Mood")
-    
-    # Keyword-based titles
-    for keyword in mood_keywords[:2]:  # Limit to 2 keywords
-        titles.append(f"{keyword.title()} {primary_mood.title()}")
-    
-    # Combine all titles
-    all_titles = mood_titles + energy_titles + titles
-    
-    # Return unique titles (up to 8)
-    return list(dict.fromkeys(all_titles))[:8]
-
-def create_search_queries(primary_mood, genre_suggestions, mood_keywords):
-    """Create search queries for different platforms"""
-    
-    queries = []
-    
-    # Basic mood searches
-    queries.append(f"{primary_mood} music playlist")
-    queries.append(f"{primary_mood} songs")
-    
-    # Genre + mood combinations
-    for genre in genre_suggestions[:2]:
-        queries.append(f"{genre} {primary_mood} playlist")
-        queries.append(f"{primary_mood} {genre} music")
-    
-    # Keyword combinations
-    for keyword in mood_keywords[:2]:
-        queries.append(f"{keyword} {primary_mood} music")
-    
-    return queries[:6]  # Limit to 6 queries
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

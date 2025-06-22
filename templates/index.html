@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mood-to-Music Recommender</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>VibeBeats - Music Recommender</title>
     <style>
         * {
             margin: 0;
@@ -16,80 +19,85 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             padding: 20px;
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: white;
             border-radius: 20px;
             padding: 40px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            max-width: 800px;
+            max-width: 700px;
             width: 100%;
             text-align: center;
         }
 
-        .header {
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
+        h1 {
             color: #333;
-            font-size: 2.5rem;
             margin-bottom: 10px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-size: 2.5em;
+            font-weight: 700;
         }
 
-        .header p {
+        .subtitle {
             color: #666;
-            font-size: 1.1rem;
+            margin-bottom: 30px;
+            font-size: 1.1em;
         }
 
-        .input-section {
+        .mood-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
             margin-bottom: 30px;
         }
 
-        .mood-input {
-            width: 100%;
+        .mood-btn {
             padding: 15px 20px;
-            border: 2px solid #e1e5e9;
-            border-radius: 15px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: white;
-            resize: vertical;
-            min-height: 60px;
-        }
-
-        .mood-input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .analyze-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 15px;
-            font-size: 1.1rem;
+            border-radius: 12px;
+            font-size: 1.1em;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 15px;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            color: white;
+            text-transform: capitalize;
+        }
+
+        .mood-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .mood-btn.happy { background: linear-gradient(45deg, #ff6b6b, #ffa726); }
+        .mood-btn.sad { background: linear-gradient(45deg, #4fc3f7, #29b6f6); }
+        .mood-btn.excited { background: linear-gradient(45deg, #ff5722, #ff9800); }
+        .mood-btn.calm { background: linear-gradient(45deg, #4caf50, #8bc34a); }
+        .mood-btn.stressed { background: linear-gradient(45deg, #9c27b0, #e91e63); }
+
+        .mood-btn.selected {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .analyze-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
         }
 
         .analyze-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
         }
 
         .analyze-btn:disabled {
@@ -98,8 +106,110 @@
             transform: none;
         }
 
+        .results {
+            display: none;
+            text-align: left;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .mood-info {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .mood-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .mood-description {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .music-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .music-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .music-item {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e6f3ff;
+            transition: all 0.3s ease;
+        }
+
+        .music-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .music-category {
+            font-weight: 600;
+            color: #0066cc;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .music-list {
+            color: #333;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .search-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .search-link {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .search-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
         .loading {
             display: none;
+            text-align: center;
             margin: 20px 0;
         }
 
@@ -110,7 +220,7 @@
             width: 30px;
             height: 30px;
             animation: spin 1s linear infinite;
-            margin: 0 auto;
+            margin: 0 auto 10px;
         }
 
         @keyframes spin {
@@ -118,266 +228,122 @@
             100% { transform: rotate(360deg); }
         }
 
-        .results {
-            display: none;
-            margin-top: 30px;
-        }
-
-        .mood-analysis {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            text-align: left;
-        }
-
-        .mood-analysis h3 {
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-        }
-
-        .mood-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .mood-item {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 10px 15px;
-            border-radius: 10px;
-            backdrop-filter: blur(5px);
-        }
-
-        .mood-item strong {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .playlist-section {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .playlist-section h3 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 1.3rem;
-        }
-
-        .playlist-titles {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .playlist-title {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-
-        .playlist-title:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-        }
-
-        .search-queries {
-            margin-top: 20px;
-        }
-
-        .search-queries h4 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .query-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .search-query {
-            background: #f8f9fa;
-            color: #333;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            border: 1px solid #e1e5e9;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .search-query:hover {
-            background: #667eea;
-            color: white;
-            transform: translateY(-1px);
-        }
-
-        .platforms {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #e1e5e9;
-        }
-
-        .platforms h4 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .platform-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .platform-btn {
-            background: #333;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .platform-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .platform-btn.spotify {
-            background: #1DB954;
-        }
-
-        .platform-btn.youtube {
-            background: #FF0000;
-        }
-
-        .platform-btn.apple {
-            background: #000;
-        }
-
         .error {
-            background: #ff6b6b;
-            color: white;
+            background: #ffebee;
+            color: #c62828;
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 8px;
             margin: 20px 0;
             display: none;
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .mood-details {
-                grid-template-columns: 1fr;
-            }
-            
-            .playlist-titles {
-                grid-template-columns: 1fr;
-            }
+        .platform-badges {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .platform-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 500;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🎵 Mood-to-Music Recommender</h1>
-            <p>Tell us how you're feeling and we'll find the perfect music for your mood</p>
+        <h1>🎵 VibeBeats</h1>
+        <p class="subtitle">Select your mood and discover the perfect music</p>
+        
+        <div class="mood-buttons">
+            <button class="mood-btn happy" onclick="selectMood('happy')">😊 Happy</button>
+            <button class="mood-btn sad" onclick="selectMood('sad')">😢 Sad</button>
+            <button class="mood-btn excited" onclick="selectMood('excited')">🤩 Excited</button>
+            <button class="mood-btn calm" onclick="selectMood('calm')">😌 Calm</button>
+            <button class="mood-btn stressed" onclick="selectMood('stressed')">😰 Stressed</button>
         </div>
 
-        <div class="input-section">
-            <textarea 
-                class="mood-input" 
-                id="moodInput" 
-                placeholder="Describe how you're feeling... (e.g., 'I'm feeling a little stressed but hopeful about the future', 'I'm in a great mood and want to dance', 'Feeling melancholic and reflective')"
-                rows="3"
-            ></textarea>
-            <button class="analyze-btn" id="analyzeBtn" onclick="analyzeMood()">
-                🎵 Analyze My Mood & Get Music
-            </button>
-        </div>
+        <button class="analyze-btn" id="analyzeBtn" onclick="analyzeMood()" disabled>
+            🎶 Get Music Recommendations
+        </button>
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p>Analyzing your mood and finding perfect music...</p>
+            <p>Finding the perfect music for you...</p>
         </div>
 
         <div class="error" id="error"></div>
 
         <div class="results" id="results">
-            <div class="mood-analysis" id="moodAnalysis">
-                <!-- Mood analysis will be inserted here -->
+            <div class="mood-info">
+                <div class="mood-title" id="moodTitle"></div>
+                <div class="mood-description" id="moodDescription"></div>
             </div>
 
-            <div class="playlist-section">
-                <h3>🎼 Recommended Playlist Titles</h3>
-                <div class="playlist-titles" id="playlistTitles">
-                    <!-- Playlist titles will be inserted here -->
-                </div>
+            <div class="music-section">
+                <div class="section-title">🎵 Genres</div>
+                <div class="music-grid" id="genresGrid"></div>
+            </div>
 
-                <div class="search-queries">
-                    <h4>🔍 Search Terms for Music Platforms</h4>
-                    <div class="query-list" id="searchQueries">
-                        <!-- Search queries will be inserted here -->
-                    </div>
-                </div>
+            <div class="music-section">
+                <div class="section-title">🎤 Artists</div>
+                <div class="music-grid" id="artistsGrid"></div>
+            </div>
 
-                <div class="platforms">
-                    <h4>🎧 Find Music On</h4>
-                    <div class="platform-buttons">
-                        <a href="#" class="platform-btn spotify" onclick="searchSpotify()">Spotify</a>
-                        <a href="#" class="platform-btn youtube" onclick="searchYouTube()">YouTube Music</a>
-                        <a href="#" class="platform-btn apple" onclick="searchApple()">Apple Music</a>
-                    </div>
+            <div class="music-section">
+                <div class="section-title">🎼 Songs</div>
+                <div class="music-grid" id="songsGrid"></div>
+            </div>
+
+            <div class="music-section">
+                <div class="section-title">📝 Playlists</div>
+                <div class="music-grid" id="playlistsGrid"></div>
+            </div>
+
+            <div class="music-section">
+                <div class="section-title">🔍 Search Links</div>
+                <div class="search-links" id="searchLinks"></div>
+                <div class="platform-badges">
+                    <span class="platform-badge">YouTube Music</span>
+                    <span class="platform-badge">Spotify</span>
+                    <span class="platform-badge">Apple Music</span>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        let currentSearchQuery = '';
+        let selectedMood = '';
+
+        function selectMood(mood) {
+            selectedMood = mood;
+            
+            // Remove selected class from all buttons
+            document.querySelectorAll('.mood-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked button
+            event.target.classList.add('selected');
+            
+            // Enable analyze button
+            document.getElementById('analyzeBtn').disabled = false;
+        }
 
         async function analyzeMood() {
-            const moodInput = document.getElementById('moodInput').value.trim();
-            const analyzeBtn = document.getElementById('analyzeBtn');
-            const loading = document.getElementById('loading');
-            const results = document.getElementById('results');
-            const error = document.getElementById('error');
-
-            if (!moodInput) {
-                showError('Please describe how you\'re feeling!');
+            if (!selectedMood) {
+                showError('Please select a mood first');
                 return;
             }
 
-            // Show loading, hide results and error
-            loading.style.display = 'block';
-            results.style.display = 'none';
-            error.style.display = 'none';
-            analyzeBtn.disabled = true;
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
 
             try {
                 const response = await fetch('/analyze_mood', {
@@ -385,7 +351,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ mood_text: moodInput })
+                    body: JSON.stringify({ mood: selectedMood })
                 });
 
                 const data = await response.json();
@@ -393,119 +359,84 @@
                 if (response.ok) {
                     displayResults(data);
                 } else {
-                    showError(data.error || 'Something went wrong. Please try again.');
+                    showError(data.error || 'An error occurred');
                 }
-            } catch (err) {
-                showError('Network error. Please check your connection and try again.');
+            } catch (error) {
+                showError('Network error. Please try again.');
             } finally {
-                loading.style.display = 'none';
-                analyzeBtn.disabled = false;
+                document.getElementById('loading').style.display = 'none';
             }
         }
 
         function displayResults(data) {
-            const results = document.getElementById('results');
-            const moodAnalysis = document.getElementById('moodAnalysis');
-            const playlistTitles = document.getElementById('playlistTitles');
-            const searchQueries = document.getElementById('searchQueries');
+            const { mood_analysis, playlist_recommendations } = data;
 
             // Display mood analysis
-            const analysis = data.mood_analysis;
-            moodAnalysis.innerHTML = `
-                <h3>🎭 Your Mood Analysis</h3>
-                <div class="mood-details">
-                    <div class="mood-item">
-                        <strong>Primary Mood</strong>
-                        ${analysis.primary_mood}
+            document.getElementById('moodTitle').textContent = 
+                `${mood_analysis.primary_mood.charAt(0).toUpperCase() + mood_analysis.primary_mood.slice(1)} Mood`;
+            document.getElementById('moodDescription').textContent = mood_analysis.mood_description;
+
+            // Display genres
+            const genresHtml = mood_analysis.genre_suggestions
+                .map(genre => `
+                    <div class="music-item">
+                        <div class="music-category">Genre</div>
+                        <div class="music-list">${genre}</div>
                     </div>
-                    <div class="mood-item">
-                        <strong>Secondary Mood</strong>
-                        ${analysis.secondary_mood}
-                    </div>
-                    <div class="mood-item">
-                        <strong>Energy Level</strong>
-                        ${analysis.energy_level}
-                    </div>
-                    <div class="mood-item">
-                        <strong>Tempo Preference</strong>
-                        ${analysis.tempo_preference}
-                    </div>
-                </div>
-                <div class="mood-item" style="grid-column: 1 / -1;">
-                    <strong>Mood Description</strong>
-                    ${analysis.mood_description}
+                `).join('');
+            document.getElementById('genresGrid').innerHTML = genresHtml;
+
+            // Display artists (placeholder - you can add this to your API response)
+            const artistsHtml = `
+                <div class="music-item">
+                    <div class="music-category">Popular Artists</div>
+                    <div class="music-list">Check the playlists for great artists!</div>
                 </div>
             `;
+            document.getElementById('artistsGrid').innerHTML = artistsHtml;
 
-            // Display playlist titles
-            const recommendations = data.playlist_recommendations;
-            playlistTitles.innerHTML = recommendations.playlist_titles
-                .map(title => `<div class="playlist-title">${title}</div>`)
+            // Display songs (placeholder)
+            const songsHtml = `
+                <div class="music-item">
+                    <div class="music-category">Featured Songs</div>
+                    <div class="music-list">Discover amazing tracks in the playlists!</div>
+                </div>
+            `;
+            document.getElementById('songsGrid').innerHTML = songsHtml;
+
+            // Display playlists
+            const playlistsHtml = playlist_recommendations.playlist_titles
+                .map(playlist => `
+                    <div class="music-item">
+                        <div class="music-category">Playlist</div>
+                        <div class="music-list">${playlist}</div>
+                    </div>
+                `).join('');
+            document.getElementById('playlistsGrid').innerHTML = playlistsHtml;
+
+            // Display search links
+            const linksHtml = playlist_recommendations.search_queries
+                .map(query => {
+                    const encodedQuery = encodeURIComponent(query);
+                    return `
+                        <a href="https://www.youtube.com/results?search_query=${encodedQuery}" 
+                           target="_blank" class="search-link">
+                            🔍 ${query}
+                        </a>
+                    `;
+                })
                 .join('');
+            document.getElementById('searchLinks').innerHTML = linksHtml;
 
-            // Display search queries
-            searchQueries.innerHTML = recommendations.search_queries
-                .map(query => `<div class="search-query" onclick="setSearchQuery('${query}')">${query}</div>`)
-                .join('');
-
-            results.style.display = 'block';
+            // Show results
+            document.getElementById('results').style.display = 'block';
         }
 
         function showError(message) {
-            const error = document.getElementById('error');
-            error.textContent = message;
-            error.style.display = 'block';
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
         }
-
-        function setSearchQuery(query) {
-            currentSearchQuery = query;
-            // Highlight the selected query
-            document.querySelectorAll('.search-query').forEach(el => {
-                el.style.background = '#f8f9fa';
-                el.style.color = '#333';
-            });
-            event.target.style.background = '#667eea';
-            event.target.style.color = 'white';
-        }
-
-        function searchSpotify() {
-            if (!currentSearchQuery) {
-                currentSearchQuery = document.querySelector('.search-query').textContent;
-            }
-            window.open(`https://open.spotify.com/search/${encodeURIComponent(currentSearchQuery)}`, '_blank');
-        }
-
-        function searchYouTube() {
-            if (!currentSearchQuery) {
-                currentSearchQuery = document.querySelector('.search-query').textContent;
-            }
-            window.open(`https://music.youtube.com/search?q=${encodeURIComponent(currentSearchQuery)}`, '_blank');
-        }
-
-        function searchApple() {
-            if (!currentSearchQuery) {
-                currentSearchQuery = document.querySelector('.search-query').textContent;
-            }
-            window.open(`https://music.apple.com/search?term=${encodeURIComponent(currentSearchQuery)}`, '_blank');
-        }
-
-        // Allow Enter key to submit
-        document.getElementById('moodInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                analyzeMood();
-            }
-        });
-
-        // Set default search query on page load
-        window.addEventListener('load', function() {
-            setTimeout(() => {
-                const firstQuery = document.querySelector('.search-query');
-                if (firstQuery) {
-                    currentSearchQuery = firstQuery.textContent;
-                }
-            }, 100);
-        });
     </script>
 </body>
 </html> 
