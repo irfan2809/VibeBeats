@@ -12,8 +12,11 @@ app = Flask(__name__)
 CORS(app)
 
 # Configure OpenRouter API
-OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+
+def get_api_key():
+    """Get API key - simplified to avoid .env file issues"""
+    return "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"
 
 @app.route('/')
 def index():
@@ -28,12 +31,13 @@ def analyze_mood():
         if not user_input:
             return jsonify({'error': 'No mood text provided'}), 400
         
-        # Check if OpenRouter API key is available
-        if not OPENROUTER_API_KEY:
+        # Get API key dynamically
+        api_key = get_api_key()
+        if not api_key:
             return jsonify({'error': 'OpenRouter API key not configured. Please set OPENROUTER_API_KEY environment variable.'}), 500
         
         # Analyze mood using OpenRouter
-        mood_analysis = analyze_mood_with_llm(user_input)
+        mood_analysis = analyze_mood_with_llm(user_input, api_key)
         
         # Generate playlist recommendations
         playlist_data = generate_playlist_recommendations(mood_analysis)
@@ -46,7 +50,7 @@ def analyze_mood():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def analyze_mood_with_llm(user_input):
+def analyze_mood_with_llm(user_input, api_key):
     """Use OpenRouter to analyze the user's mood and generate recommendations"""
     
     prompt = f"""
@@ -70,7 +74,7 @@ def analyze_mood_with_llm(user_input):
     
     try:
         headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
             "HTTP-Referer": "http://localhost:5000",
             "X-Title": "Mood-to-Music Recommender"
